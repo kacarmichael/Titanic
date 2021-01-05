@@ -21,10 +21,13 @@ from scipy.stats.stats import pearsonr
 
 from sklearn.impute import SimpleImputer
 from sklearn.metrics import confusion_matrix
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.metrics import accuracy_score
+from sklearn.neural_network import MLPClassifier
 
 #from pandasgui import show
 
-os.chdir(r'C:\Users\Aaron\Desktop\Personal Data Projects\Titanic')
+#os.chdir(r'C:\Users\Aaron\Desktop\Personal Data Projects\Titanic')
 
 train = pd.read_csv('train.csv')
 test = pd.read_csv('test.csv')
@@ -97,8 +100,8 @@ for idx in range(len(combined)):
 new_train = combined.iloc[0:len(train),]
 y_train = new_train['Survived']
 x_train = new_train[['Pclass', 'Sex', 'Age', 'vip_status', 'fam_size']]
-new_test = combined.iloc[len(train):,]
-        
+new_test = combined.iloc[len(train):,][['Pclass', 'Sex', 'Age', 'vip_status', 'fam_size']]
+
 #logistic regression
 #Predict Survived based on Pclass, Sex, Age(or age_categ), vip_status, fam_size
 formula = 'Survived ~ Pclass+Sex+Age+vip_status+fam_size'
@@ -108,12 +111,32 @@ log_reg_model.summary()
 new_train['odds_survival'] = log_reg_model.predict(x_train)
 new_train['predicted_survival'] = [x >= 0.5 for x in new_train['odds_survival']]
 new_train['predicted_survival'] = np.where(new_train['predicted_survival'] == False, 0, 1)
-confusion_matrix(new_train['Survived'], new_train['predicted_survival'])  
+confusion_matrix(new_train['Survived'], new_train['predicted_survival'])
+
+breakdown_df = new_train[['Pclass', 'Sex', 'Survived', 'age_categ']]
+sex_table = pd.pivot_table(breakdown_df, values='Pclass', index=['Sex'], columns=['Survived'], aggfunc='count')
+sns.heatmap(sex_table, annot=True, fmt='d')
+
+age_table = pd.pivot_table(breakdown_df, values='Pclass', index=['age_categ'], columns=['Survived'], aggfunc='count')
+age_table = age_table.reindex(['elder', 'mid', 'adult', 'teen', 'young'])
+sns.heatmap(age_table, annot=True, fmt='d')
+
+#Decision tree
+
+dt = DecisionTreeClassifier(criterion='gini')
+dt.fit(x_train, y_train)
+
+predictions = dt.predict(new_test)
+
+
+#Neural Net
+nn = MLPClassifier(max_iter=1000).fit(x_train, y_train)
 # TODO:
     
-#     Break down survival by age, sex, and class
+
 #     Build Decision Tree
 #     Build Categorical Regression
 #     SKLearn Neural Net?
+
         
         
